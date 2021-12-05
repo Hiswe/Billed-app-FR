@@ -21,6 +21,27 @@ export const modal = () => `
   </div>
   `
 
+export const getIconEye = (bill) => {
+  if (!bill.fileName) return ``
+  return `<span id="icon-eye-d" data-testid="icon-eye-d" data-bill-url="${bill.fileUrl}"> ${eyeWhite} </span>`
+}
+
+export const fileRow = (bill) => {
+  if (!bill) return ``
+  return `
+  <div class="row">
+    <div class="col-sm">
+      <label for="file" class="bold-label">Justificatif</label>
+        <div class='input-field input-flex file-flex'>
+        <span id="file-name-admin">${bill.fileName || `pas de justificatif`}</span>
+        <div class='icons-container'>
+          ${getIconEye(bill)}
+        </div>
+      </div>
+    </div>
+  </div>`
+}
+
 export default (bill) => {
   return `
     <div class="container dashboard-form" data-testid="dashboard-form">
@@ -63,17 +84,7 @@ export default (bill) => {
           </div>
         </div>
       </div>
-      <div class="row">
-        <div class="col-sm">
-          <label for="file" class="bold-label">Justificatif</label>
-            <div class='input-field input-flex file-flex'>
-            <span id="file-name-admin">${bill.fileName}</span>
-            <div class='icons-container'>
-              <span id="icon-eye-d" data-testid="icon-eye-d" data-bill-url="${bill.fileUrl}"> ${eyeWhite} </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      ${fileRow(bill)}
       <div class="row">
        ${
          bill.status === 'pending'

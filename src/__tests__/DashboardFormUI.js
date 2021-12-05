@@ -47,6 +47,7 @@ describe('Given I am connected as an Admin and I am on Dashboard Page', () => {
       expect(screen.getByText(formatDate(bill.date))).toBeTruthy()
       expect(screen.getByText(bill.amount.toString())).toBeTruthy()
       expect(screen.getByText(bill.pct.toString())).toBeTruthy()
+      expect(screen.queryByTestId('icon-eye-d')).toBeTruthy()
     })
   })
   describe('When pending bill is passed to DashboardUI', () => {
@@ -65,11 +66,19 @@ describe('Given I am connected as an Admin and I am on Dashboard Page', () => {
       expect(screen.getByText(bill.commentAdmin)).toBeTruthy()
     })
   })
-  describe('When acceptrefuseded bill is passed to DashboardUI', () => {
+  describe('When accept/refused bill is passed to DashboardUI', () => {
     test('Then, it should show admin commentary', () => {
       const html = DashboardFormUI(billrefused)
       document.body.innerHTML = html
       expect(screen.getByText(bill.commentAdmin)).toBeTruthy()
+    })
+  })
+  describe('When then image is missing', () => {
+    test(`Then, it shouldn't be possible to display the modal`, () => {
+      const billNoImage = { ...billAccepted, fileName: null, fileUrl: null }
+      const html = DashboardFormUI(billNoImage)
+      document.body.innerHTML = html
+      expect(screen.queryByTestId('icon-eye-d')).not.toBeTruthy();
     })
   })
 })
