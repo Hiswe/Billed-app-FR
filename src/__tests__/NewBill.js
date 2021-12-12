@@ -56,7 +56,10 @@ describe('Given I am connected as an employee', () => {
         },
       })
       expect(newBill.handleChangeFile).toHaveBeenCalled()
+      // file is invalid => not uploading!
       expect(newBill.uploadFile).not.toHaveBeenCalled()
+      expect(newBill.fileUrl).toBe(null)
+      expect(newBill.fileName).toBe(null)
       // form is incomplete => not posting!
       expect(newBill.createBill).not.toHaveBeenCalled()
     })
