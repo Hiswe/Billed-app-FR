@@ -7,14 +7,15 @@ export default class NewBill {
     this.onNavigate = onNavigate
     this.firestore = firestore
     const formNewBill = this.document.querySelector(`form[data-testid="form-new-bill"]`)
-    formNewBill.addEventListener('submit', this.handleSubmit)
+    formNewBill.addEventListener('submit', (event) => this.handleSubmit(event))
     const file = this.document.querySelector(`input[data-testid="file"]`)
-    file.addEventListener('change', this.handleChangeFile)
+    file.addEventListener('change', (event) => this.handleChangeFile(event))
     this.fileUrl = null
     this.fileName = null
     new Logout({ document, localStorage, onNavigate })
   }
-  handleChangeFile = (e) => {
+
+  handleChangeFile(e) {
     const $input = this.document.querySelector(`input[data-testid="file"]`)
     const file = $input.files[0]
     const isValidType = /image\/(jpe?g|png)/.test(file.type)
@@ -24,6 +25,11 @@ export default class NewBill {
       $input.value = null
       return
     }
+    this.uploadFile(file)
+  }
+
+  uploadFile(file) {
+    if (!this.firestore) return
     this.firestore.storage
       .ref(`justificatifs/${file.name}`)
       .put(file)
@@ -33,7 +39,8 @@ export default class NewBill {
         this.fileName = file.name
       })
   }
-  handleSubmit = (e) => {
+
+  handleSubmit(e) {
     e.preventDefault()
     console.log(
       'e.target.querySelector(`input[data-testid="datepicker"]`).value',
@@ -61,7 +68,7 @@ export default class NewBill {
   }
 
   // not need to cover this function by tests
-  createBill = (bill) => {
+  createBill(bill) {
     if (this.firestore) {
       this.firestore
         .bills()
