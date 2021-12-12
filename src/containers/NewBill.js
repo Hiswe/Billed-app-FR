@@ -15,16 +15,22 @@ export default class NewBill {
     new Logout({ document, localStorage, onNavigate })
   }
   handleChangeFile = (e) => {
-    const file = this.document.querySelector(`input[data-testid="file"]`).files[0]
-    const filePath = e.target.value.split(/\\/g)
-    const fileName = filePath[filePath.length - 1]
+    const $input = this.document.querySelector(`input[data-testid="file"]`)
+    const file = $input.files[0]
+    const isValidType = /image\/(jpe?g|png)/.test(file.type)
+    if (!isValidType) {
+      this.fileUrl = null
+      this.fileName = null
+      $input.value = null
+      return
+    }
     this.firestore.storage
-      .ref(`justificatifs/${fileName}`)
+      .ref(`justificatifs/${file.name}`)
       .put(file)
       .then((snapshot) => snapshot.ref.getDownloadURL())
       .then((url) => {
         this.fileUrl = url
-        this.fileName = fileName
+        this.fileName = file.name
       })
   }
   handleSubmit = (e) => {
@@ -47,6 +53,9 @@ export default class NewBill {
       fileName: this.fileName,
       status: 'pending',
     }
+    const MANDATORY_KEYS = Object.keys(bill).filter((keyName) => keyName !== `commentary`)
+    const isValidForm = MANDATORY_KEYS.every((keyName) => bill[keyName] != null && bill[keyName] !== ``)
+    if (!isValidForm) return
     this.createBill(bill)
     this.onNavigate(ROUTES_PATH['Bills'])
   }
