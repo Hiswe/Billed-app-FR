@@ -30,7 +30,7 @@ export const card = (bill) => {
   const lastName = firstAndLastNames.includes('.') ? firstAndLastNames.split('.')[1] : firstAndLastNames
 
   return `
-    <div class='bill-card' id='open-bill${bill.id}' data-testid='open-bill${bill.id}'>
+    <div class='bill-card' data-bill-id="${bill.id}" id='open-bill${bill.id}' data-testid='open-bill${bill.id}'>
       <div class='bill-card-name-container'>
         <div class='bill-card-name'> ${firstName} ${lastName} </div>
         <span class='bill-card-grey'> ... </span>
@@ -63,18 +63,46 @@ export const getStatus = (index) => {
 }
 
 export default class {
-  constructor({ document, onNavigate, firestore, bills, localStorage }) {
+  constructor({ document, onNavigate, firestore, bills = [], localStorage }) {
     this.document = document
     this.onNavigate = onNavigate
     this.firestore = firestore
-    $('#arrow-icon1').on(`click`, (e) => this.handleShowTickets(e, bills, 1))
-    $('#arrow-icon2').on(`click`, (e) => this.handleShowTickets(e, bills, 2))
-    $('#arrow-icon3').on(`click`, (e) => this.handleShowTickets(e, bills, 3))
+
+    // make the header clickable
+    $(`.status-bills-header`).on(`click`, (event) => {
+      const $icon = event.currentTarget.querySelector(`.arrow-icon`)
+      if (!$icon) return
+      const iconId = $icon.getAttribute(`id`)
+      const { 1: indexAsString } = /(\d)$/.exec(iconId)
+      const index = Number.parseInt(indexAsString, 10)
+      if (Number.isNaN(index)) return
+      this.handleShowTickets(bills, index)
+    })
+
+    // use Vanilla JS to have a better support of event delegation into tests
+    // feeds might not already have  been rendered (
+    // • waiting for Fetch request to end
+    // • a new instance will be created after that
+    const $billsFeed = document.querySelector(`.bills-feed`)
+    if ($billsFeed) {
+      $billsFeed.addEventListener(`click`, (event) => {
+        // https://developer.mozilla.org/en-US/docs/Web/API/Element/matches
+        // https://developer.mozilla.org/en-US/docs/Web/API/Element/closest
+        const $billCard = event.target.matches(`.bill-card`) ? event.target : event.target.closest(`.bill-card`)
+        if (!$billCard) return
+        const { billId } = $billCard.dataset
+        if (!billId) return
+        const bill = bills.find((bill) => bill.id === billId)
+        if (!bill) return
+        this.handleEditTicket(bill, bills)
+      })
+    }
+
     this.getBillsAllUsers()
     new Logout({ localStorage, onNavigate })
   }
 
-  handleClickIconEye = () => {
+  handleClickIconEye() {
     const billUrl = $('#icon-eye-d').attr('data-bill-url')
     $('#modaleFileAdmin1')
       .find('.modal-body')
@@ -82,7 +110,7 @@ export default class {
     if (typeof $('#modaleFileAdmin1').modal === 'function') $('#modaleFileAdmin1').modal('show')
   }
 
-  handleEditTicket(e, bill, bills) {
+  handleEditTicket(bill, bills) {
     if (this.counter === undefined || this.id !== bill.id) this.counter = 0
     if (this.id === undefined || this.id !== bill.id) this.id = bill.id
     if (this.counter % 2 === 0) {
@@ -102,12 +130,12 @@ export default class {
       $('.vertical-navbar').css({ height: '120vh' })
       this.counter++
     }
-    $('#icon-eye-d').on(`click`, this.handleClickIconEye)
-    $('#btn-accept-bill').on(`click`, (e) => this.handleAcceptSubmit(e, bill))
-    $('#btn-refuse-bill').on(`click`, (e) => this.handleRefuseSubmit(e, bill))
+    $('#icon-eye-d').on(`click`, () => this.handleClickIconEye())
+    $('#btn-accept-bill').on(`click`, () => this.handleAcceptSubmit(bill))
+    $('#btn-refuse-bill').on(`click`, () => this.handleRefuseSubmit(bill))
   }
 
-  handleAcceptSubmit = (e, bill) => {
+  handleAcceptSubmit(bill) {
     const newBill = {
       ...bill,
       status: 'accepted',
@@ -117,7 +145,7 @@ export default class {
     this.onNavigate(ROUTES_PATH['Dashboard'])
   }
 
-  handleRefuseSubmit = (e, bill) => {
+  handleRefuseSubmit(bill) {
     const newBill = {
       ...bill,
       status: 'refused',
@@ -127,7 +155,7 @@ export default class {
     this.onNavigate(ROUTES_PATH['Dashboard'])
   }
 
-  handleShowTickets(e, bills, index) {
+  handleShowTickets(bills, index) {
     if (this.counter === undefined || this.index !== index) this.counter = 0
     if (this.index === undefined || this.index !== index) this.index = index
     if (this.counter % 2 === 0) {
@@ -139,41 +167,34 @@ export default class {
       $(`#status-bills-container${this.index}`).html('')
       this.counter++
     }
-
-    bills.forEach((bill) => {
-      $(`#open-bill${bill.id}`).click((e) => this.handleEditTicket(e, bill, bills))
-    })
-
     return bills
   }
 
   // not need to cover this function by tests
-  getBillsAllUsers = () => {
-    if (this.firestore) {
-      return this.firestore
-        .bills()
-        .get()
-        .then((snapshot) => {
-          const bills = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            date: doc.data().date,
-            status: doc.data().status,
-          }))
-          return bills
-        })
-        .catch(console.log)
-    }
+  getBillsAllUsers() {
+    if (!this.firestore) return
+    return this.firestore
+      .bills()
+      .get()
+      .then((snapshot) => {
+        const bills = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          date: doc.data().date,
+          status: doc.data().status,
+        }))
+        return bills
+      })
+      .catch(console.log)
   }
 
   // not need to cover this function by tests
-  updateBill = (bill) => {
-    if (this.firestore) {
-      return this.firestore
-        .bill(bill.id)
-        .update(bill)
-        .then((bill) => bill)
-        .catch(console.log)
-    }
+  updateBill(bill) {
+    if (!this.firestore) return
+    return this.firestore
+      .bill(bill.id)
+      .update(bill)
+      .then((bill) => bill)
+      .catch(console.log)
   }
 }
