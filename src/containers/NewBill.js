@@ -15,7 +15,7 @@ export default class NewBill {
     new Logout({ document, localStorage, onNavigate })
   }
 
-  handleChangeFile(e) {
+  handleChangeFile() {
     const $input = this.document.querySelector(`input[data-testid="file"]`)
     const file = $input.files[0]
     const isValidType = /image\/(jpe?g|png)/.test(file.type)
@@ -40,22 +40,22 @@ export default class NewBill {
       })
   }
 
-  handleSubmit(e) {
-    e.preventDefault()
+  handleSubmit(event) {
+    event.preventDefault()
     console.log(
       'e.target.querySelector(`input[data-testid="datepicker"]`).value',
-      e.target.querySelector(`input[data-testid="datepicker"]`).value,
+      event.target.querySelector(`input[data-testid="datepicker"]`).value,
     )
     const email = JSON.parse(localStorage.getItem('user')).email
     const bill = {
       email,
-      type: e.target.querySelector(`select[data-testid="expense-type"]`).value,
-      name: e.target.querySelector(`input[data-testid="expense-name"]`).value,
-      amount: parseInt(e.target.querySelector(`input[data-testid="amount"]`).value),
-      date: e.target.querySelector(`input[data-testid="datepicker"]`).value,
-      vat: e.target.querySelector(`input[data-testid="vat"]`).value,
-      pct: parseInt(e.target.querySelector(`input[data-testid="pct"]`).value) || 20,
-      commentary: e.target.querySelector(`textarea[data-testid="commentary"]`).value,
+      type: event.target.querySelector(`select[data-testid="expense-type"]`).value,
+      name: event.target.querySelector(`input[data-testid="expense-name"]`).value,
+      amount: parseInt(event.target.querySelector(`input[data-testid="amount"]`, 10).value),
+      date: event.target.querySelector(`input[data-testid="datepicker"]`).value,
+      vat: event.target.querySelector(`input[data-testid="vat"]`).value,
+      pct: parseInt(event.target.querySelector(`input[data-testid="pct"]`, 10).value) || 20,
+      commentary: event.target.querySelector(`textarea[data-testid="commentary"]`).value,
       fileUrl: this.fileUrl,
       fileName: this.fileName,
       status: 'pending',
@@ -69,14 +69,13 @@ export default class NewBill {
 
   // not need to cover this function by tests
   createBill(bill) {
-    if (this.firestore) {
-      this.firestore
-        .bills()
-        .add(bill)
-        .then(() => {
-          this.onNavigate(ROUTES_PATH['Bills'])
-        })
-        .catch((error) => error)
-    }
+    if (!this.firestore) return
+    this.firestore
+      .bills()
+      .add(bill)
+      .then(() => {
+        this.onNavigate(ROUTES_PATH['Bills'])
+      })
+      .catch((error) => error)
   }
 }
