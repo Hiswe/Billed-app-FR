@@ -2,13 +2,20 @@ import { fireEvent, screen } from '@testing-library/dom'
 import BillsUI from '../views/BillsUI.js'
 import { bills } from '../fixtures/bills.js'
 import Bills from '../containers/Bills.js'
-import { localStorageMock } from '../__mocks__/localStorage.js'
+// import { localStorageMock } from '../__mocks__/localStorage.js'
 import { ROUTES, ROUTES_PATH } from '../constants/routes.js'
 import firebase from '../__mocks__/firebase.js'
 import Firestore from '../app/Firestore.js'
 import Router from '../app/Router'
 
 describe('Given I am connected as an employee', () => {
+  beforeAll(() => {
+    jest.spyOn(Bills.prototype, `handleClickIconEye`)
+    jest.spyOn(Bills.prototype, `handleClickNewBill`)
+  })
+
+  afterEach(() => jest.clearAllMocks())
+
   describe('When I am on Bills Page', () => {
     test('Then bill icon in vertical layout should be highlighted', () => {
       // const html = BillsUI({ data: [bills] })
@@ -75,10 +82,8 @@ describe("When I click on button 'Nouvelle note de frais'", () => {
       localStorage: window.localStorage,
     })
     const buttonNewBill = screen.getByTestId('btn-new-bill')
-    const mockFunction = jest.fn(bill.handleClickNewBill)
-    buttonNewBill.addEventListener('click', mockFunction)
     fireEvent.click(buttonNewBill)
-    expect(mockFunction).toHaveBeenCalled()
+    expect(bill.handleClickNewBill).toHaveBeenCalled()
   })
 })
 describe('When I click on the eye icon', () => {
@@ -100,11 +105,9 @@ describe('When I click on the eye icon', () => {
     const eyeIcon = screen.getAllByTestId('icon-eye')[0]
     const modal = document.getElementById('modaleFile')
 
-    const mockFunction = jest.fn(bill.handleClickIconEye(eyeIcon))
-    eyeIcon.addEventListener('click', mockFunction)
     fireEvent.click(eyeIcon)
 
-    expect(mockFunction).toHaveBeenCalled()
+    expect(bill.handleClickIconEye).toHaveBeenCalled()
     expect(modal).toBeTruthy()
   })
 })
