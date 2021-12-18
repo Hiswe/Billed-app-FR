@@ -4,12 +4,14 @@ import { bills } from '../fixtures/bills.js'
 import Bills from '../containers/Bills.js'
 // import { localStorageMock } from '../__mocks__/localStorage.js'
 import { ROUTES, ROUTES_PATH } from '../constants/routes.js'
-import firebase from '../__mocks__/firebase.js'
+// import firebase from '../__mocks__/firebase.js'
 import * as firestoreMocks from '../__mocks__/firestore.js'
 import Firestore from '../app/Firestore.js'
 import Router from '../app/Router'
 
 describe('Given I am connected as an employee', () => {
+  const onNavigate = jest.fn()
+
   beforeAll(() => {
     jest.spyOn(Bills.prototype, `handleClickIconEye`)
     jest.spyOn(Bills.prototype, `handleClickNewBill`)
@@ -102,10 +104,6 @@ describe('Given I am connected as an employee', () => {
       const html = BillsUI({ data: bills })
       document.body.innerHTML = html
 
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-
       const bill = new Bills({
         document,
         onNavigate,
@@ -115,6 +113,8 @@ describe('Given I am connected as an employee', () => {
       const buttonNewBill = screen.getByTestId('btn-new-bill')
       fireEvent.click(buttonNewBill)
       expect(bill.handleClickNewBill).toHaveBeenCalled()
+      expect(onNavigate).toHaveBeenCalled()
+      expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH.NewBill)
     })
   })
   describe('When I click on the eye icon', () => {
@@ -122,9 +122,6 @@ describe('Given I am connected as an employee', () => {
       const html = BillsUI({ data: bills })
       document.body.innerHTML = html
 
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
       const bill = new Bills({
         document,
         onNavigate,
@@ -140,6 +137,7 @@ describe('Given I am connected as an employee', () => {
 
       expect(bill.handleClickIconEye).toHaveBeenCalled()
       expect(modal).toBeTruthy()
+      expect(modal.innerHTML).toMatchSnapshot()
     })
   })
 })
