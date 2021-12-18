@@ -1,31 +1,30 @@
 import VerticalLayout from './VerticalLayout.js'
-import ErrorPage from "./ErrorPage.js"
-import LoadingPage from "./LoadingPage.js"
+import ErrorPage from './ErrorPage.js'
+import LoadingPage from './LoadingPage.js'
 
 import Actions from './Actions.js'
 
 const row = (bill) => {
-  return (`
+  return `
     <tr>
       <td>${bill.type}</td>
       <td>${bill.name}</td>
-      <td>${bill.date}</td>
+      <td data-testid="bill-date">${bill.date}</td>
       <td>${bill.amount} €</td>
       <td>${bill.status}</td>
       <td>
         ${Actions(bill.fileUrl)}
       </td>
     </tr>
-    `)
-  }
+    `
+}
 
 const rows = (data) => {
-  return (data && data.length) ? data.map(bill => row(bill)).join("") : ""
+  return data && data.length ? data.map((bill) => row(bill)).join('') : ''
 }
 
 export default ({ data: bills, loading, error }) => {
-  
-  const modal = () => (`
+  const modal = () => `
     <div class="modal fade" id="modaleFile" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
@@ -40,15 +39,17 @@ export default ({ data: bills, loading, error }) => {
         </div>
       </div>
     </div>
-  `)
+  `
 
   if (loading) {
     return LoadingPage()
   } else if (error) {
     return ErrorPage(error)
   }
-  
-  return (`
+
+  const sortedBills = Array.isArray(bills) ? [...bills].sort((a, b) => (a.date < b.date ? 1 : -1)) : []
+
+  return `
     <div class='layout'>
       ${VerticalLayout(120)}
       <div class='content'>
@@ -69,12 +70,11 @@ export default ({ data: bills, loading, error }) => {
               </tr>
           </thead>
           <tbody data-testid="tbody">
-            ${rows(bills)}
+            ${rows(sortedBills)}
           </tbody>
           </table>
         </div>
       </div>
       ${modal()}
     </div>`
-  )
 }

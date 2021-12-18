@@ -1,4 +1,6 @@
-export const bills = [
+import { jest } from '@jest/globals'
+
+const BILLS = [
   {
     'id': '47qAXb6fIm2zOKkLzMro',
     'vat': '80',
@@ -12,7 +14,7 @@ export const bills = [
     'date': '2004-04-04',
     'amount': 400,
     'commentAdmin': 'ok',
-    'email': 'a@a',
+    'email': 'test@test.com',
     'pct': 20,
   },
   {
@@ -24,7 +26,7 @@ export const bills = [
     'commentary': 'plop',
     'pct': 20,
     'type': 'Transports',
-    'email': 'a@a',
+    'email': 'test@test.com',
     'fileUrl':
       'https://firebasestorage.googleapis.com/v0/b/billable-677b6.a…61.jpeg?alt=media&token=7685cd61-c112-42bc-9929-8a799bb82d8b',
     'date': '2001-01-01',
@@ -34,7 +36,7 @@ export const bills = [
   {
     'id': 'UIUZtnPQvnbFnB0ozvJh',
     'name': 'test3',
-    'email': 'a@a',
+    'email': 'not-test@not-test.com',
     'type': 'Services en ligne',
     'vat': '60',
     'pct': 20,
@@ -52,7 +54,7 @@ export const bills = [
     'status': 'refused',
     'pct': 20,
     'amount': 200,
-    'email': 'a@a',
+    'email': 'no-test@not-test.com',
     'name': 'test2',
     'vat': '40',
     'fileName': 'preview-facture-free-201801-pdf-1.jpg',
@@ -64,3 +66,26 @@ export const bills = [
       'https://firebasestorage.googleapis.com/v0/b/billable-677b6.a…f-1.jpg?alt=media&token=4df6ed2c-12c8-42a2-b013-346c1346f732',
   },
 ]
+
+export const FIRESTORE_FILE_URL = `/firestore/chuckNorris.png`
+export const getDownloadURL = jest.fn().mockResolvedValue(FIRESTORE_FILE_URL)
+export const storagePut = jest.fn().mockResolvedValue({ ref: { getDownloadURL } })
+export const storageRef = jest.fn().mockReturnValue({ put: storagePut })
+export const addBill = jest.fn().mockResolvedValue(true)
+export const getBills = jest.fn().mockResolvedValue({
+  docs: BILLS.map((bill) => ({ data: () => bill })),
+})
+export const getUser = jest.fn().mockResolvedValue({ exists: true })
+export const setUsers = jest.fn().mockResolvedValue({ name: `a user` })
+export const docUsers = jest.fn().mockReturnValue({ set: setUsers })
+export const bills = jest.fn().mockReturnValue({
+  add: addBill,
+  get: getBills,
+})
+
+export const firestore = {
+  storage: { ref: storageRef },
+  users: () => ({ doc: docUsers }),
+  user: () => ({ get: getUser }),
+  bills,
+}
