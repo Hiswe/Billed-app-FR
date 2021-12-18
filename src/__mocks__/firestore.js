@@ -75,6 +75,9 @@ export const addBill = jest.fn().mockResolvedValue(true)
 export const getBills = jest.fn().mockResolvedValue({
   docs: BILLS.map((bill) => ({ data: () => bill })),
 })
+export const getUser = jest.fn().mockResolvedValue({ exists: true })
+export const setUsers = jest.fn().mockResolvedValue({ name: `a user` })
+export const docUsers = jest.fn().mockReturnValue({ set: setUsers })
 export const bills = jest.fn().mockReturnValue({
   add: addBill,
   get: getBills,
@@ -82,5 +85,7 @@ export const bills = jest.fn().mockReturnValue({
 
 export const firestore = {
   storage: { ref: storageRef },
+  users: () => ({ doc: docUsers }),
+  user: () => ({ get: getUser }),
   bills,
 }

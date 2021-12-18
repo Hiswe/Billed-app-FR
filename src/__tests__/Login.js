@@ -1,9 +1,26 @@
-import LoginUI from '../views/LoginUI'
-import Login from '../containers/Login.js'
-import { ROUTES } from '../constants/routes'
 import { fireEvent, screen } from '@testing-library/dom'
 
+import LoginUI from '../views/LoginUI'
+import Login from '../containers/Login.js'
+import { ROUTES, ROUTES_PATH } from '../constants/routes'
+import * as firestoreMocks from '../__mocks__/firestore.js'
+
 describe('Given that I am a user on login page', () => {
+  const onNavigate = jest.fn()
+  const localeStorageSetItem = jest.fn()
+  const localStorage = {
+    setItem: localeStorageSetItem,
+  }
+
+  beforeAll(() => {
+    jest.spyOn(Login.prototype, `handleSubmitEmployee`)
+    jest.spyOn(Login.prototype, `handleSubmitAdmin`)
+    jest.spyOn(Login.prototype, `checkIfUserExists`)
+    jest.spyOn(Login.prototype, `createUser`)
+  })
+
+  afterEach(() => jest.clearAllMocks())
+
   describe('When I do not fill fields and I click on employee button Login In', () => {
     test('Then It should renders Login page', () => {
       document.body.innerHTML = LoginUI()
@@ -62,38 +79,20 @@ describe('Given that I am a user on login page', () => {
 
       const form = screen.getByTestId('form-employee')
 
-      // localStorage should be populated with form data
-      Object.defineProperty(window, 'localStorage', {
-        value: {
-          getItem: jest.fn(() => null),
-          setItem: jest.fn(() => null),
-        },
-        writable: true,
-      })
-
-      // we have to mock navigation to test it
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-
       let PREVIOUS_LOCATION = ''
-
-      const firebase = jest.fn()
 
       const login = new Login({
         document,
-        localStorage: window.localStorage,
+        localStorage,
         onNavigate,
         PREVIOUS_LOCATION,
-        firebase,
+        firestore: firestoreMocks.firestore,
       })
 
-      const handleSubmit = jest.fn(login.handleSubmitEmployee)
-      form.addEventListener('submit', handleSubmit)
       fireEvent.submit(form)
-      expect(handleSubmit).toHaveBeenCalled()
-      expect(window.localStorage.setItem).toHaveBeenCalled()
-      expect(window.localStorage.setItem).toHaveBeenCalledWith(
+      expect(login.handleSubmitEmployee).toHaveBeenCalled()
+      expect(localeStorageSetItem).toHaveBeenCalled()
+      expect(localeStorageSetItem).toHaveBeenCalledWith(
         'user',
         JSON.stringify({
           type: 'Employee',
@@ -103,14 +102,8 @@ describe('Given that I am a user on login page', () => {
         }),
       )
     })
-
-    test('It should renders Bills page', () => {
-      expect(screen.getAllByText('Mes notes de frais')).toBeTruthy()
-    })
   })
-})
 
-describe('Given that I am a user on login page', () => {
   describe('When I do not fill fields and I click on admin button Login In', () => {
     test('Then It should renders Login page', () => {
       document.body.innerHTML = LoginUI()
@@ -170,52 +163,37 @@ describe('Given that I am a user on login page', () => {
       expect(inputPasswordUser.value).toBe(inputData.password)
 
       const form = screen.getByTestId('form-admin')
-
-      // localStorage should be populated with form data
-      Object.defineProperty(window, 'localStorage', {
-        value: {
-          getItem: jest.fn(() => null),
-          setItem: jest.fn(() => null),
-        },
-        writable: true,
-      })
-
-      // we have to mock navigation to test it
-      const onNavigate = (pathname) => {
-        document.body.innerHTML = ROUTES({ pathname })
-      }
-
       let PREVIOUS_LOCATION = ''
-
-      const firebase = jest.fn()
 
       const login = new Login({
         document,
-        localStorage: window.localStorage,
+        localStorage,
         onNavigate,
         PREVIOUS_LOCATION,
-        firebase,
+        firestore: firestoreMocks.firestore,
       })
 
-      const handleSubmit = jest.fn(login.handleSubmitAdmin)
-
-      form.addEventListener('submit', handleSubmit)
       fireEvent.submit(form)
-      expect(handleSubmit).toHaveBeenCalled()
-      expect(window.localStorage.setItem).toHaveBeenCalled()
-      expect(window.localStorage.setItem).toHaveBeenCalledWith(
-        'user',
-        JSON.stringify({
-          type: 'Admin',
-          email: inputData.email,
-          password: inputData.password,
-          status: 'connected',
-        }),
-      )
-    })
-
-    test('It should renders HR dashboard page', () => {
-      expect(screen.queryByText('Validations')).toBeTruthy()
+      const USER = {
+        type: 'Admin',
+        email: inputData.email,
+        password: inputData.password,
+        status: 'connected',
+      }
+      expect(login.handleSubmitAdmin).toHaveBeenCalled()
+      expect(localeStorageSetItem).toHaveBeenCalled()
+      expect(localeStorageSetItem).toHaveBeenCalledWith('user', JSON.stringify(USER))
+      expect(login.createUser).toHaveBeenCalled()
+      expect(login.createUser).toHaveBeenCalledWith(USER)
+      expect(firestoreMocks.docUsers).toHaveBeenCalled()
+      expect(firestoreMocks.docUsers).toHaveBeenCalledWith(USER.email)
+      expect(firestoreMocks.setUsers).toHaveBeenCalled()
+      expect(firestoreMocks.setUsers).toHaveBeenCalledWith({
+        type: 'Admin',
+        name: 'johndoe',
+      })
+      expect(onNavigate).toHaveBeenCalled()
+      expect(onNavigate).toHaveBeenCalledWith(ROUTES_PATH.Dashboard)
     })
   })
 })
