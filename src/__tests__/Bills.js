@@ -5,6 +5,7 @@ import Bills from '../containers/Bills.js'
 // import { localStorageMock } from '../__mocks__/localStorage.js'
 import { ROUTES, ROUTES_PATH } from '../constants/routes.js'
 import firebase from '../__mocks__/firebase.js'
+import * as firestoreMocks from '../__mocks__/firestore.js'
 import Firestore from '../app/Firestore.js'
 import Router from '../app/Router'
 
@@ -12,6 +13,13 @@ describe('Given I am connected as an employee', () => {
   beforeAll(() => {
     jest.spyOn(Bills.prototype, `handleClickIconEye`)
     jest.spyOn(Bills.prototype, `handleClickNewBill`)
+    window.localStorage.setItem(
+      'user',
+      JSON.stringify({
+        email: 'test@test.com',
+        type: 'Employee',
+      }),
+    )
   })
 
   afterEach(() => jest.clearAllMocks())
@@ -24,13 +32,6 @@ describe('Given I am connected as an employee', () => {
       jest.mock('../app/Firestore')
       Firestore.bills = () => ({ bills, get: jest.fn().mockResolvedValue() })
 
-      window.localStorage.setItem(
-        'user',
-        JSON.stringify({
-          email: 'test@test.com',
-          type: 'Employee',
-        }),
-      )
       const pathname = ROUTES_PATH['Bills']
       Object.defineProperty(window, 'location', { value: { hash: pathname } })
       document.body.innerHTML = `<div id="root"></div>`
@@ -47,7 +48,8 @@ describe('Given I am connected as an employee', () => {
       expect(dates).toEqual(datesSorted)
     })
   })
-  describe('Given employee  enter  his email and his  password', () => {
+
+  describe('Given employee enter his email and his password', () => {
     describe('When email and password are good', () => {
       test('Then loading page Bills', () => {
         const html = BillsUI({ loading: true })
@@ -64,77 +66,80 @@ describe('Given I am connected as an employee', () => {
       })
     })
   })
-})
 
-describe("When I click on button 'Nouvelle note de frais'", () => {
-  test('Then the page new bill should be  open', () => {
-    const html = BillsUI({ data: bills })
-    document.body.innerHTML = html
-
-    const onNavigate = (pathname) => {
-      document.body.innerHTML = ROUTES({ pathname })
-    }
-
-    const bill = new Bills({
-      document,
-      onNavigate,
-      firestore: null,
-      localStorage: window.localStorage,
-    })
-    const buttonNewBill = screen.getByTestId('btn-new-bill')
-    fireEvent.click(buttonNewBill)
-    expect(bill.handleClickNewBill).toHaveBeenCalled()
-  })
-})
-describe('When I click on the eye icon', () => {
-  test('Then modal should be open ', () => {
-    const html = BillsUI({ data: bills })
-    document.body.innerHTML = html
-
-    const onNavigate = (pathname) => {
-      document.body.innerHTML = ROUTES({ pathname })
-    }
-    const bill = new Bills({
-      document,
-      onNavigate,
-      firestore: null,
-      localStorage: window.localStorage,
-    })
-    $.fn.modal = jest.fn()
-
-    const eyeIcon = screen.getAllByTestId('icon-eye')[0]
-    const modal = document.getElementById('modaleFile')
-
-    fireEvent.click(eyeIcon)
-
-    expect(bill.handleClickIconEye).toHaveBeenCalled()
-    expect(modal).toBeTruthy()
-  })
-})
-
-//  Test d'integration GET Bills
-
-describe('Given I am a user connected as an employee', () => {
+  //  Test d'integration GET Bills
   describe('When I navigate to Bills', () => {
     test('fetches bills from mock API GET', async () => {
-      const getSpy = jest.spyOn(firebase, 'get')
-      const bills = await firebase.get()
-      expect(getSpy).toHaveBeenCalledTimes(1)
-      expect(bills.data.length).toBe(4)
+      const bills = new Bills({
+        document,
+        firestore: firestoreMocks.firestore,
+        localStorage: window.localStorage,
+      })
+      const billsResult = await bills.getBills()
+      expect(firestoreMocks.bills).toHaveBeenCalled()
+      expect(firestoreMocks.getBills).toHaveBeenCalled()
+      // message have been filtered
+      expect(billsResult.length).toBe(2)
     })
+
     test('fetches bills from an API and fails with 404 message error', async () => {
-      firebase.get.mockImplementationOnce(() => Promise.reject(new Error('Erreur 404')))
       const html = BillsUI({ error: 'Erreur 404' })
       document.body.innerHTML = html
       const message = await screen.getByText(/Erreur 404/)
       expect(message).toBeTruthy()
     })
+
     test('fetches messages from an API and fails with 500 message error', async () => {
-      firebase.get.mockImplementationOnce(() => Promise.reject(new Error('Erreur 500')))
       const html = BillsUI({ error: 'Erreur 500' })
       document.body.innerHTML = html
       const message = await screen.getByText(/Erreur 500/)
       expect(message).toBeTruthy()
+    })
+  })
+
+  describe("When I click on button 'Nouvelle note de frais'", () => {
+    test('Then the page new bill should be  open', () => {
+      const html = BillsUI({ data: bills })
+      document.body.innerHTML = html
+
+      const onNavigate = (pathname) => {
+        document.body.innerHTML = ROUTES({ pathname })
+      }
+
+      const bill = new Bills({
+        document,
+        onNavigate,
+        firestore: null,
+        localStorage: window.localStorage,
+      })
+      const buttonNewBill = screen.getByTestId('btn-new-bill')
+      fireEvent.click(buttonNewBill)
+      expect(bill.handleClickNewBill).toHaveBeenCalled()
+    })
+  })
+  describe('When I click on the eye icon', () => {
+    test('Then modal should be open ', () => {
+      const html = BillsUI({ data: bills })
+      document.body.innerHTML = html
+
+      const onNavigate = (pathname) => {
+        document.body.innerHTML = ROUTES({ pathname })
+      }
+      const bill = new Bills({
+        document,
+        onNavigate,
+        firestore: null,
+        localStorage: window.localStorage,
+      })
+      $.fn.modal = jest.fn()
+
+      const eyeIcon = screen.getAllByTestId('icon-eye')[0]
+      const modal = document.getElementById('modaleFile')
+
+      fireEvent.click(eyeIcon)
+
+      expect(bill.handleClickIconEye).toHaveBeenCalled()
+      expect(modal).toBeTruthy()
     })
   })
 })

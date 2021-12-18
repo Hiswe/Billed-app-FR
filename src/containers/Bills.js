@@ -41,17 +41,15 @@ export default class {
 
   // not need to cover this function by tests
   getBills() {
+    if (!this.firestore) return
     const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : ''
-    if (this.firestore) {
-      return this.firestore
-        .bills()
-        .get()
-        .then((snapshot) => {
-          const bills = snapshot.docs.map(formatBill).filter((bill) => bill.email === userEmail)
-          console.log('length', bills.length)
-          return bills
-        })
-        .catch((error) => error)
-    }
+    return this.firestore
+      .bills()
+      .get()
+      .then((snapshot) => {
+        const bills = snapshot.docs.map(formatBill).filter((bill) => bill.email === userEmail)
+        return bills
+      })
+      .catch((error) => error)
   }
 }
